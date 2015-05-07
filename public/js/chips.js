@@ -41,5 +41,17 @@
 
       return false;
     });
+
+    $('#clear-chips').click(function() {
+      $.post($(this).attr('href'), function(data) {
+        if(data.result == 'success') {
+          alert(data.result);
+        } else {
+          alert(data.result);
+        }
+      });
+
+      return false;
+    });
   };
 }(window.Chips.Users = window.Chips.Users || {}, jQuery));

@@ -126,7 +126,7 @@ router.post('/chips/transfer/:from/:to/:amount', function(req, res, next) {
   });
 });
 
-router.get('/chips/clear', function(req, res, next) {
+router.post('/chips/clear', function(req, res, next) {
   User.find(function(err, users) {
     for(var i = 0; i < users.length; i++) {
       users[i].chips = [];
