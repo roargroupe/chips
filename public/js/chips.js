@@ -53,6 +53,18 @@
       return false;
     });
 
+    $('#start-week').click(function() {
+      $.post($(this).attr('href'), function(data) {
+        if(data.result == 'success') {
+          alert(data.result);
+        } else {
+          alert(data.result);
+        }
+      });
+
+      return false;
+    });
+
     $('.activate, .deactivate').click(function() {
       $.post($(this).attr('href'), function(data) {
         if(data.result == 'success') {

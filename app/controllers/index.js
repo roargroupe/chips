@@ -86,7 +86,7 @@ router.post('/users/deactivate/:uid', function(req, res, next) {
 });
 
 router.get('/chips/transfer', function(req, res, next) {
-  User.find({'deleted': false}, function(err, users) {
+  User.find({'deleted': false, 'active': true}, function(err, users) {
     if(err) return next(err);
     res.render('transfer', {
       title: 'Transfer Chips',
@@ -156,15 +156,43 @@ router.post('/chips/transfer/:from/:to/:amount', function(req, res, next) {
   });
 });
 
+function clearChips(callback) {
+  Chip.remove({}, function(err, chips) {
+    User.update({}, {$set: {chips: []}}, {multi: true}, function(err, users) {
+      callback();
+    });
+  });
+}
+
 router.post('/chips/clear', function(req, res, next) {
-  User.find(function(err, users) {
-    for(var i = 0; i < users.length; i++) {
-      users[i].chips = [];
-      users[i].save();
-    }
+  clearChips(function() {
+    res.json({result: 'success'});
+  });
+});
+
+// TODO: Find a better way to stack this so that you can return an actual success
+router.post('/chips/start', function(req, res, next) {
+  clearChips(function() {
+    User.find({'deleted': false, 'active': true}, function(err, users) {
+      if(err) {
+        res.json({result: err});
+      }
+
+      users.forEach(function(user) {
+        var chips = [];
+
+        for(var j = 0; j < config.chipsAtStart; j++) {
+          var chip = new Chip({'user': user._id});
+          chip.save();
+
+          chips.push(chip);
+        }
+
+        user.chips = chips;
+        user.save();
+      });
+    });
   });
 
-  Chip.remove({});
-
-  res.json({result: 'success'});
+  res.json({result: 'pending'});
 });
