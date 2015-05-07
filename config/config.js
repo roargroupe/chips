@@ -9,7 +9,8 @@ var config = {
       name: 'chips'
     },
     port: 3000,
-    db: 'mongodb://localhost/chips-development'
+    db: 'mongodb://localhost/chips-development',
+    slackToken: 'xoxp-2358143428-3992166299-4757109184-f103d9'
   },
 
   test: {
@@ -18,7 +19,8 @@ var config = {
       name: 'chips'
     },
     port: 3000,
-    db: 'mongodb://localhost/chips-test'
+    db: 'mongodb://localhost/chips-test',
+    slackToken: 'xoxp-2358143428-3992166299-4757109184-f103d9'
   },
 
   production: {
@@ -27,7 +29,8 @@ var config = {
       name: 'chips'
     },
     port: 3000,
-    db: 'mongodb://localhost/chips-production'
+    db: 'mongodb://localhost/chips-production',
+    slackToken: 'xoxp-2358143428-3992166299-4757109184-f103d9'
   }
 };
 

@@ -2,3 +2,11 @@ extends layout
 
 block content
   h1= title
+
+  p
+    a(href='/users') View Users
+  p
+    a(href='/chips/transfer') Transfer Chips
+
+  h2 Admin
+  a#import-users(href='/users/import') Import Users

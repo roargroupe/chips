@@ -1,0 +1,23 @@
+extends layout
+
+block content
+  h1= title
+
+  table
+    tr
+      th Avatar
+      th Username
+      th Name
+      th Chips
+      th Medals
+    each user in users
+      tr
+        td
+          img(src=user.avatar, alt=user.name)
+        td= user.name
+        td= user.real_name
+        td
+          p= user.chips.length
+          a.give-chip(href='/chips/give/' + user.uid) Give Chip
+        td
+  

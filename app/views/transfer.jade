@@ -1,0 +1,17 @@
+extends layout
+
+block content
+  h1= title
+
+  form#transfer-chips
+    label(for='from') From:
+    select(id='from', name='from')
+      each user in users
+        option(value=user.uid) #{user.name} #{user.real_name ? ('(' + user.real_name + ')') : ''}
+    label(for='to') To:
+    select(id='to', name='to')
+      each user in users
+        option(value=user.uid) #{user.name} #{user.real_name ? ('(' + user.real_name + ')') : ''}
+    label(for='amount') Amount:
+    input(id='amount', type='text', name='amount', value='1')
+    input(type='submit')
