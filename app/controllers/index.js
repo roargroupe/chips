@@ -17,7 +17,17 @@ router.get('/', function(req, res, next) {
 });
 
 router.get('/users', function(req, res, next) {
-  User.find({'deleted': false}, function(err, users) {
+  User.find({'deleted': false, 'active': true}, function(err, users) {
+    if(err) return next(err);
+    res.render('users', {
+      title: 'Chips Users',
+      users: users
+    });
+  });
+});
+
+router.get('/users/all', function(req, res, next) {
+  User.find({}, function(err, users) {
     if(err) return next(err);
     res.render('users', {
       title: 'Chips Users',
@@ -52,6 +62,26 @@ router.post('/users/import', function(req, res, next) {
     }
 
     res.json({result: err});
+  });
+});
+
+router.post('/users/activate/:uid', function(req, res, next) {
+  User.findOneAndUpdate({'uid': req.params.uid}, {'active': true}, function(err, user) {
+    if(err) {
+      res.json({result: err});
+    }
+
+    res.json({result: 'success'});
+  });
+});
+
+router.post('/users/deactivate/:uid', function(req, res, next) {
+  User.findOneAndUpdate({'uid': req.params.uid}, {'active': false}, function(err, user) {
+    if(err) {
+      res.json({result: err});
+    }
+
+    res.json({result: 'success'});
   });
 });
 

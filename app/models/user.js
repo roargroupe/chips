@@ -8,6 +8,10 @@ var UserSchema = new Schema({
   email: String,
   avatar: String,
   deleted: Boolean,
+  active: { 
+  	type: Boolean, 
+  	default: true 
+  },
   chips: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Chip'

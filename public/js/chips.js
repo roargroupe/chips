@@ -5,8 +5,7 @@
     $('#import-users').click(function() {
       $.post("/users/import", function(data) {
         if(data.result == 'success') {
-          alert('Import Complete');
-          location.reload(true);
+          alert(data.result);
         } else {
           alert(data.result);
         }
@@ -46,6 +45,18 @@
       $.post($(this).attr('href'), function(data) {
         if(data.result == 'success') {
           alert(data.result);
+        } else {
+          alert(data.result);
+        }
+      });
+
+      return false;
+    });
+
+    $('.activate, .deactivate').click(function() {
+      $.post($(this).attr('href'), function(data) {
+        if(data.result == 'success') {
+          location.reload(true);
         } else {
           alert(data.result);
         }

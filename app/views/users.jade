@@ -9,7 +9,7 @@ block content
       th Username
       th Name
       th Chips
-      th Medals
+      th Status
     each user in users
       tr
         td
@@ -18,6 +18,11 @@ block content
         td= user.real_name
         td
           p= user.chips.length
-          a.give-chip(href='/chips/give/' + user.uid) Give Chip
+            //-a.give-chip(href='/chips/give/' + user.uid) Give Chip
         td
+          if user.active
+            a.deactivate(href='/users/deactivate/' + user.uid) Deactivate
+          else
+            a.activate(href='/users/activate/' + user.uid) Activate
+
   
