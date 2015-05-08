@@ -38,7 +38,7 @@ var config = {
     app: {
       name: 'chips'
     },
-    port: 3000,
+    port: process.env.PORT || 3000,
     db: process.env.MONGOLAB_URI,
     slackToken: 'xoxp-2358143428-3992166299-4757109184-f103d9',
     chipsAtStart: 3,
