@@ -284,7 +284,7 @@ router.post('/chip', function(req, res, next) {
         link_names: 1
       });
       
-      return res.status(200).json({result: toUser.name + ' has been chipped!'});
+      return res.status(200).json({result: toUser.name + ' has been chipped! You have ' + fromUser.chips.length + ' left.'});
     });
   });
 });
