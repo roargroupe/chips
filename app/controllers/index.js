@@ -17,7 +17,7 @@ router.get('/', function(req, res, next) {
 });
 
 router.get('/users', function(req, res, next) {
-  User.find({'deleted': false, 'active': true}, function(err, users) {
+  User.find({'deleted': false, 'active': true}).populate('transactions.user').exec(function(err, users) {
     if(err) return next(err);
     res.render('users', {
       title: 'Chips Users',
@@ -40,28 +40,26 @@ router.post('/users/import', function(req, res, next) {
   request('https://slack.com/api/users.list?token=' + config.slackToken, function (err, response, body) {
     if(!err && response.statusCode == 200) {
       var members = JSON.parse(body).members;
+      console.log(members)
 
-      for(var i = 0; i < members.length; i++) {
+      members.forEach(function(member) {
         var user = {
-          uid: members[i].id,
-          name: members[i].name,
-          real_name: members[i].profile.real_name,
-          email: members[i].profile.email,
-          avatar: members[i].profile.image_192,
-          deleted: members[i].deleted
+          uid: member.id,
+          name: member.name,
+          real_name: member.profile.real_name,
+          email: member.profile.email,
+          avatar: member.profile.image_192,
+          deleted: member.deleted,
+          active: true
         };
 
-        User.findOneAndUpdate({'uid': user.uid}, user, {upsert: true}, function(err, doc) {
-          if(err) {
-            res.json({result: err});
-          }
-        });
-      }
+        User.findOneAndUpdate({'uid': user.uid}, user, {upsert: true}, function(err) {});
+      });
 
-      res.json({result: 'success'});
-    }
-
-    res.json({result: err});
+      res.json({result: 'pending'});
+    } else {
+      res.json({result: err});
+    }    
   });
 });
 
@@ -130,6 +128,10 @@ router.post('/chips/transfer/:from/:to/:amount', function(req, res, next) {
       res.json({result: err});
     }
 
+    if(!fromUser.active) {
+      res.json({result: 'This user is not active.'});
+    }
+
     if(fromUser.chips.length < req.params.amount) {
       res.json({result: 'This user does not have sufficient chips.'});
     }
@@ -137,6 +139,10 @@ router.post('/chips/transfer/:from/:to/:amount', function(req, res, next) {
     User.findOne({'uid': req.params.to}).populate('chips').exec(function(err, toUser) {
       if(err) {
         res.json({result: err});
+      }
+
+      if(!toUser.active) {
+        res.json({result: 'This user is not active.'});
       }
       
       for(var i = 0; i < req.params.amount; i++) {
@@ -147,6 +153,20 @@ router.post('/chips/transfer/:from/:to/:amount', function(req, res, next) {
 
         toUser.chips.push(chip);
       }
+
+      fromUser.transactions.push({
+        user: toUser._id,
+        direction: config.directions.SENT,
+        chip: chip._id,
+        created: Date.now()
+      });
+
+      toUser.transactions.push({
+        user: fromUser._id,
+        direction: config.directions.RECEIVED,
+        chip: chip._id,
+        created: Date.now()
+      });
 
       fromUser.save();
       toUser.save();
@@ -171,6 +191,7 @@ router.post('/chips/clear', function(req, res, next) {
 });
 
 // TODO: Find a better way to stack this so that you can return an actual success
+// TODO: Make use of function for giving someone a chip instead of doing it here (don't populate transaction fields though)
 router.post('/chips/start', function(req, res, next) {
   clearChips(function() {
     User.find({'deleted': false, 'active': true}, function(err, users) {

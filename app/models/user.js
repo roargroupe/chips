@@ -15,6 +15,18 @@ var UserSchema = new Schema({
   chips: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Chip'
+  }],
+  transactions: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    direction: Number,
+    chip: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Chip'
+    },
+    created: Date
   }]
 });
 

@@ -11,7 +11,11 @@ var config = {
     port: 3000,
     db: 'mongodb://localhost/chips-development',
     slackToken: 'xoxp-2358143428-3992166299-4757109184-f103d9',
-    chipsAtStart: 3
+    chipsAtStart: 3,
+    directions: {
+      SENT: 0,
+      RECEIVED: 1
+    }
   },
 
   test: {
@@ -22,7 +26,11 @@ var config = {
     port: 3000,
     db: 'mongodb://localhost/chips-test',
     slackToken: 'xoxp-2358143428-3992166299-4757109184-f103d9',
-    chipsAtStart: 3
+    chipsAtStart: 3,
+    directions: {
+      SENT: 0,
+      RECEIVED: 1
+    }
   },
 
   production: {
@@ -33,7 +41,11 @@ var config = {
     port: 3000,
     db: 'mongodb://localhost/chips-production',
     slackToken: 'xoxp-2358143428-3992166299-4757109184-f103d9',
-    chipsAtStart: 3
+    chipsAtStart: 3,
+    directions: {
+      SENT: 0,
+      RECEIVED: 1
+    }
   }
 };
 
