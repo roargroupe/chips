@@ -280,7 +280,8 @@ router.post('/chip', function(req, res, next) {
         token: config.slackToken,
         channel: '#chips',
         text: '@' + toUser.name + ' has been chipped!',
-        icon_emoji: ':heart_eyes_cat'
+        icon_emoji: ':heart_eyes_cat',
+        parse: 'full'
       });
       
       return res.status(200).json({result: toUser.name + ' has been chipped!'});
