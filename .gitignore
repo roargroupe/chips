@@ -10,9 +10,6 @@ pids
 # Grunt intermediate storage
 .grunt
 
-# Compiled binary addons
-public/components
-
 # Dependency directory
 node_modules/
 
