@@ -41,6 +41,7 @@ var config = {
     port: process.env.PORT || 3000,
     db: process.env.MONGOLAB_URI,
     slackToken: 'xoxp-2358143428-3992166299-4757109184-f103d9',
+    slackOutgoingToken: 'XqaWepkEfNQnVqZdJSHT39NY',
     chipsAtStart: 3,
     directions: {
       SENT: 0,

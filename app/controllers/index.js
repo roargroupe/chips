@@ -217,3 +217,68 @@ router.post('/chips/start', function(req, res, next) {
 
   return res.json({result: 'pending'});
 });
+
+router.post('/chip', function(req, res, next) {
+  if(req.body.token != config.slackOutgoingToken) {
+    return res.status(200).json({result: 'Who is this?'});
+  }
+
+  var fromId = req.body.user_id;
+  var toUsername = req.body.text.replace('@', '');
+
+  User.findOne({'uid': fromId}).populate('chips').exec(function(err, fromUser) {
+    if(err) {
+      return res.status(200).json({result: err});
+    }
+
+    if(!fromUser.active) {
+      return res.status(200).json({result: 'This user is not active.'});
+    }
+
+    if(fromUser.chips.length < req.params.amount) {
+      return res.status(200).json({result: 'This user does not have sufficient chips.'});
+    }
+
+    User.findOne({'name': toUsername}).populate('chips').exec(function(err, toUser) {
+      if(err) {
+        return res.status(200).json({result: err});
+      }
+
+      if(fromUser._id == toUser._id) {
+        return res.status(200).json({result: 'Cannot transfer to the same person.'});
+      }      
+
+      if(!toUser.active) {
+        return res.status(200).json({result: 'This user is not active.'});
+      }
+      
+      //for(var i = 0; i < req.params.amount; i++) {
+      var chip = fromUser.chips.pop();
+
+      chip.user._id = toUser._id;
+      chip.save();
+
+      toUser.chips.push(chip);
+      //}
+
+      fromUser.transactions.push({
+        user: toUser._id,
+        direction: config.directions.SENT,
+        chip: chip._id,
+        created: Date.now()
+      });
+
+      toUser.transactions.push({
+        user: fromUser._id,
+        direction: config.directions.RECEIVED,
+        chip: chip._id,
+        created: Date.now()
+      });
+
+      fromUser.save();
+      toUser.save();
+      
+      return res.status(200).json({result: toUser.name + ' has been chipped!'});
+    });
+  });
+});
