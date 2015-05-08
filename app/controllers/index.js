@@ -224,6 +224,7 @@ router.post('/chip', function(req, res, next) {
   }
 
   var fromId = req.body.user_id;
+  // TODO support multiple users being chipped
   var toUsername = req.body.text.replace('@', '');
 
   User.findOne({'uid': fromId}).populate('chips').exec(function(err, fromUser) {
