@@ -244,7 +244,7 @@ router.post('/chip', function(req, res, next) {
         return res.status(200).json({result: err});
       }
 
-      if(fromUser._id == toUser._id) {
+      if(fromUser.uid == toUser.uid) {
         return res.status(200).json({result: 'Cannot transfer to the same person.'});
       }      
 
@@ -252,14 +252,12 @@ router.post('/chip', function(req, res, next) {
         return res.status(200).json({result: 'This user is not active.'});
       }
       
-      //for(var i = 0; i < req.params.amount; i++) {
       var chip = fromUser.chips.pop();
 
       chip.user._id = toUser._id;
       chip.save();
 
       toUser.chips.push(chip);
-      //}
 
       fromUser.transactions.push({
         user: toUser._id,
