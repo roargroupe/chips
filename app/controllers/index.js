@@ -235,7 +235,7 @@ router.post('/chip', function(req, res, next) {
       return res.status(200).json({result: 'This user is not active.'});
     }
 
-    if(fromUser.chips.length < req.params.amount) {
+    if(!fromUser.chips.length) {
       return res.status(200).json({result: 'This user does not have sufficient chips.'});
     }
 
