@@ -9,6 +9,7 @@ block content
       th Username
       th Name
       th Chips
+      th Transactions
       th Status
     each user in users
       tr
@@ -19,6 +20,9 @@ block content
         td
           p= user.chips.length
             //-a.give-chip(href='/chips/give/' + user.uid) Give Chip
+        td
+          each transaction in user.transactions
+            p #{transaction.direction ? 'from' : 'to'} #{transaction.user.name}
         td
           if user.active
             a.deactivate(href='/users/deactivate/' + user.uid) Deactivate

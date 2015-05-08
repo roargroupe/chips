@@ -56,9 +56,9 @@ router.post('/users/import', function(req, res, next) {
         User.findOneAndUpdate({'uid': user.uid}, user, {upsert: true}, function(err) {});
       });
 
-      res.json({result: 'pending'});
+      return res.json({result: 'pending'});
     } else {
-      res.json({result: err});
+      return res.json({result: err});
     }    
   });
 });
@@ -66,20 +66,20 @@ router.post('/users/import', function(req, res, next) {
 router.post('/users/activate/:uid', function(req, res, next) {
   User.findOneAndUpdate({'uid': req.params.uid}, {'active': true}, function(err, user) {
     if(err) {
-      res.json({result: err});
+      return res.json({result: err});
     }
 
-    res.json({result: 'success'});
+    return res.json({result: 'success'});
   });
 });
 
 router.post('/users/deactivate/:uid', function(req, res, next) {
   User.findOneAndUpdate({'uid': req.params.uid}, {'active': false}, function(err, user) {
     if(err) {
-      res.json({result: err});
+      return res.json({result: err});
     }
 
-    res.json({result: 'success'});
+    return res.json({result: 'success'});
   });
 });
 
@@ -96,21 +96,21 @@ router.get('/chips/transfer', function(req, res, next) {
 router.post('/chips/give/:uid', function(req, res, next) {
   User.findOne({'uid': req.params.uid}, function(err, user) {
     if(err) {
-      res.json({result: err});
+      return res.json({result: err});
     }
 
     var chip = new Chip({'user': user._id});      
 
     chip.save(function(err) {
       if(err) {
-        res.json({result: err});
+        return res.json({result: err});
       } else {
         user.chips.push(chip);
         user.save(function(err) {
           if(err) {
-            res.json({result: err});
+            return res.json({result: err});
           } else {
-            res.json({result: 'success'});
+            return res.json({result: 'success'});
           }
         });
       }
@@ -120,29 +120,29 @@ router.post('/chips/give/:uid', function(req, res, next) {
 
 router.post('/chips/transfer/:from/:to/:amount', function(req, res, next) {
   if(req.params.from == req.params.to) {
-    res.json({result: 'Cannot transfer to the same person.'});
+    return res.json({result: 'Cannot transfer to the same person.'});
   }
 
   User.findOne({'uid': req.params.from}).populate('chips').exec(function(err, fromUser) {
     if(err) {
-      res.json({result: err});
+      return res.json({result: err});
     }
 
     if(!fromUser.active) {
-      res.json({result: 'This user is not active.'});
+      return res.json({result: 'This user is not active.'});
     }
 
     if(fromUser.chips.length < req.params.amount) {
-      res.json({result: 'This user does not have sufficient chips.'});
+      return res.json({result: 'This user does not have sufficient chips.'});
     }
 
     User.findOne({'uid': req.params.to}).populate('chips').exec(function(err, toUser) {
       if(err) {
-        res.json({result: err});
+        return res.json({result: err});
       }
 
       if(!toUser.active) {
-        res.json({result: 'This user is not active.'});
+        return res.json({result: 'This user is not active.'});
       }
       
       for(var i = 0; i < req.params.amount; i++) {
@@ -171,7 +171,7 @@ router.post('/chips/transfer/:from/:to/:amount', function(req, res, next) {
       fromUser.save();
       toUser.save();
       
-      res.json({result: 'success'});
+      return res.json({result: 'success'});
     });
   });
 });
@@ -186,7 +186,7 @@ function clearChips(callback) {
 
 router.post('/chips/clear', function(req, res, next) {
   clearChips(function() {
-    res.json({result: 'success'});
+    return res.json({result: 'success'});
   });
 });
 
@@ -196,7 +196,7 @@ router.post('/chips/start', function(req, res, next) {
   clearChips(function() {
     User.find({'deleted': false, 'active': true}, function(err, users) {
       if(err) {
-        res.json({result: err});
+        return res.json({result: err});
       }
 
       users.forEach(function(user) {
@@ -215,5 +215,5 @@ router.post('/chips/start', function(req, res, next) {
     });
   });
 
-  res.json({result: 'pending'});
+  return res.json({result: 'pending'});
 });
