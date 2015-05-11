@@ -19,7 +19,7 @@ block content
         td= user.real_name
         td
           p= user.chips.length
-            //-a.give-chip(href='/chips/give/' + user.uid) Give Chip
+            a.give-chip(href='/chips/give/' + user.uid) Give Chip
         td
           each transaction in user.transactions
             p #{transaction.direction ? 'from' : 'to'} #{transaction.user.name}

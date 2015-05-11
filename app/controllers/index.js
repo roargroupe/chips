@@ -4,7 +4,8 @@ var express = require('express'),
   User = mongoose.model('User'),
   Chip = mongoose.model('Chip'),
   request = require('request'),
-  config = require('../../config/config');
+  moment = require('moment'),
+  config = require('../../config/config');  
 
 module.exports = function(app) {  
   app.use('/', router);  
@@ -40,7 +41,6 @@ router.post('/users/import', function(req, res, next) {
   request('https://slack.com/api/users.list?token=' + config.slackToken, function (err, response, body) {
     if(!err && response.statusCode == 200) {
       var members = JSON.parse(body).members;
-      console.log(members)
 
       members.forEach(function(member) {
         var user = {
@@ -218,75 +218,101 @@ router.post('/chips/start', function(req, res, next) {
   return res.json({result: 'pending'});
 });
 
-router.post('/chip', function(req, res, next) {
-  if(req.body.token != config.slackOutgoingToken) {
+function sendChips(token, reqFromUserId, text, res) {
+  // TODO kill everything after the @mention for now
+  if(token != config.slackOutgoingToken) {
     return res.status(200).json({result: 'Who is this?'});
   }
 
-  var fromId = req.body.user_id;
-  // TODO support multiple users being chipped
-  var toUsername = req.body.text.replace('@', '');
-  // TODO kill everything after the @mention for now
+  var fromUserId = reqFromUserId;
+  var body = text;
 
-  User.findOne({'uid': fromId}).populate('chips').exec(function(err, fromUser) {
+  var pattern = /\B@[.a-z0-9_-]+/gi;
+  var mentions = body.match(pattern);
+  
+  User.findOne({'uid': fromUserId}).populate('chips').exec(function(err, fromUser) {
     if(err) {
-      return res.status(200).json({result: err});
+      return res.status(200).send('Hmmm, there seems to be something wrong with the server. Please try again later.');
     }
 
     if(!fromUser.active) {
-      return res.status(200).json({result: 'This user is not active.'});
+      return res.status(200).send('You cannot send chips because you are not currently an active user.');
     }
 
     if(!fromUser.chips.length) {
-      return res.status(200).json({result: 'This user does not have sufficient chips.'});
+      return res.status(200).send("You don't have enough chips to send.");
     }
 
-    User.findOne({'name': toUsername}).populate('chips').exec(function(err, toUser) {
-      if(err) {
-        return res.status(200).json({result: err});
-      }
+    mentions.forEach(function(mention, index) {
+      User.findOne({'name': mention.replace('@','')}).populate('chips').exec(function(err, toUser) {
+        if(err) {
+          return res.status(200).send('Hmmm, there seems to be something wrong with the server. Please try again later.');
+        }        
 
-      if(fromUser.uid == toUser.uid) {
-        return res.status(200).json({result: 'Cannot transfer to the same person.'});
-      }      
+        if(toUser == null) {          
+          return res.status(200).send("We couldn't find " + mention + ".");
+        }
 
-      if(!toUser.active) {
-        return res.status(200).json({result: 'This user is not active.'});
-      }
-      
-      var chip = fromUser.chips.pop();
+        if(fromUser.uid == toUser.uid) {
+          return res.status(200).send("Nice try, but you can't transfer a chip to yourself.");
+        }
 
-      chip.user._id = toUser._id;
-      chip.save();
+        if(!toUser.active) {
+          return res.status(200).send('@' + toUser.name + ' is not an active user.');
+        }
 
-      toUser.chips.push(chip);
+        var chip = fromUser.chips.pop();
 
-      fromUser.transactions.push({
-        user: toUser._id,
-        direction: config.directions.SENT,
-        chip: chip._id,
-        created: Date.now()
+        chip.user._id = toUser._id;
+        chip.save();
+
+        toUser.chips.push(chip);
+
+        fromUser.transactions.push({
+          user: toUser._id,
+          direction: config.directions.SENT,
+          chip: chip._id,
+          created: Date.now()
+        });
+
+        toUser.transactions.push({
+          user: fromUser._id,
+          direction: config.directions.RECEIVED,
+          chip: chip._id,
+          created: Date.now()
+        });
+
+        fromUser.save();
+        toUser.save();
+
+        request.post('https://slack.com/api/chat.postMessage').form({
+          token: config.slackToken,
+          link_names: 1,
+          channel: '#chips',
+          text: mention + ' has been chipped!',          
+          icon_emoji: ':heart_eyes_cat'
+        });
+
+        var week = fromUser.transactions.filter(function(elem) {
+          return moment(elem.created).isAfter(moment().day("Monday").startOf('day'));
+        });
+
+        var sent = week.filter(function(elem) {
+          return (elem.direction == config.directions.SENT);
+        });
+
+        if(index == mentions.length - 1) {
+          return res.status(200).send(mentions.join(', ') + ' ha' + (mentions.length == 1 ? 's' : 've' ) + ' been chipped! You have ' + fromUser.chips.length + ' chip' + (fromUser.chips.length == 1 ? '' : 's' ) + ' left. You have sent ' + sent.length + ' chip' + (sent.length == 1 ? '' : 's' ) + ' and received ' + (week.length - sent.length) + ' chip' + ((week.length - sent.length) == 1 ? '' : 's' ) + ' this week.');
+        }
       });
-
-      toUser.transactions.push({
-        user: fromUser._id,
-        direction: config.directions.RECEIVED,
-        chip: chip._id,
-        created: Date.now()
-      });
-
-      fromUser.save();
-      toUser.save();
-
-      request.post('https://slack.com/api/chat.postMessage').form({
-        token: config.slackToken,
-        channel: '#chips',
-        text: '@' + toUser.name + ' has been chipped!',
-        icon_emoji: ':heart_eyes_cat',
-        link_names: 1
-      });
-      
-      return res.status(200).json({result: toUser.name + ' has been chipped! You have ' + fromUser.chips.length + ' left.'});
     });
   });
+}
+
+router.post('/chip', function(req, res, next) {
+  sendChips(req.body.token, req.body.user_id, req.body.text, res);
+});
+
+router.post('/chip/local/', function(req, res, next) {
+  sendChips(config.slackOutgoingToken, config.testUserId, req.body.text, res);
 });

@@ -41,6 +41,20 @@
       return false;
     });
 
+    /*$('#chip-local').submit(function() {
+      var form = $(this).serializeObject();
+
+      $.post('/chip/local', form, function(data) {
+        if(data.result == 'success') {
+          alert(data);
+        } else {
+          alert(data);
+        }
+      });
+
+      return false;
+    });*/
+
     $('#clear-chips').click(function() {
       $.post($(this).attr('href'), function(data) {
         if(data.result == 'success') {
