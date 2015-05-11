@@ -289,8 +289,8 @@ function sendChips(token, reqFromUserId, text, res) {
           token: config.slackToken,
           link_names: 1,
           channel: '#chips',
-          text: mention + ' has been chipped!',          
-          icon_emoji: ':heart_eyes_cat'
+          text: mention + ' has been chipped!',
+          icon_emoji: ':heart_eyes_cat:'
         });
 
         var week = fromUser.transactions.filter(function(elem) {
