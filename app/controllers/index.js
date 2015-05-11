@@ -291,9 +291,6 @@ function sendChips(token, reqFromUserId, text, res) {
 
         if(index == mentions.length - 1) {
           request.post('https://hooks.slack.com/services/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').form({
-            'payload':{
-              'username': 'Chester'
-            },
             'attachments':[
               {
                 'fallback':mentions.join(', ') + ' ha' + (mentions.length == 1 ? 's' : 've' ) + ' been chipped!',
