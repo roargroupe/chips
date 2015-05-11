@@ -243,6 +243,8 @@ function sendChips(token, reqFromUserId, text, res) {
       return res.status(200).send("You don't have enough chips to send.");
     }
 
+    var formattedMentions = [];
+
     mentions.forEach(function(mention, index) {
       User.findOne({'name': mention.replace('@','')}).populate('chips').exec(function(err, toUser) {
         if(err) {
@@ -285,23 +287,37 @@ function sendChips(token, reqFromUserId, text, res) {
         fromUser.save();
         toUser.save();
 
-        request.post('https://slack.com/api/chat.postMessage').form({
-          token: config.slackToken,
-          link_names: 1,
-          channel: '#chips',
-          text: mention + ' has been chipped!',
-          icon_emoji: ':heart_eyes_cat:'
-        });
-
-        var week = fromUser.transactions.filter(function(elem) {
-          return moment(elem.created).isAfter(moment().day("Monday").startOf('day'));
-        });
-
-        var sent = week.filter(function(elem) {
-          return (elem.direction == config.directions.SENT);
-        });
+        formattedMentions.push('<@' + toUser.uid + '|' + toUser.name + '>');
 
         if(index == mentions.length - 1) {
+          request.post('https://hooks.slack.com/services/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').form({
+            'payload':{
+              'username': 'Chester'
+            },
+            'attachments':[
+              {
+                'fallback':mentions.join(', ') + ' ha' + (mentions.length == 1 ? 's' : 've' ) + ' been chipped!',
+                /*'pretext':'New open task [Urgent]: <http://url_to_task|Test out Slack message attachments>',*/
+                'color':'#c6a256',
+                'fields':[
+                  {
+                    'title':formattedMentions.join(', ') + ' ha' + (formattedMentions.length == 1 ? 's' : 've' ) + ' been chipped!',
+                    'value':'Way to go buddy!',
+                    'short':false
+                  }
+                ]
+              }
+            ]
+          });
+
+          var week = fromUser.transactions.filter(function(elem) {
+            return moment(elem.created).isAfter(moment().day('Monday').startOf('day'));
+          });
+
+          var sent = week.filter(function(elem) {
+            return (elem.direction == config.directions.SENT);
+          });
+
           return res.status(200).send(mentions.join(', ') + ' ha' + (mentions.length == 1 ? 's' : 've' ) + ' been chipped! You have ' + fromUser.chips.length + ' chip' + (fromUser.chips.length == 1 ? '' : 's' ) + ' left. You have sent ' + sent.length + ' chip' + (sent.length == 1 ? '' : 's' ) + ' and received ' + (week.length - sent.length) + ' chip' + ((week.length - sent.length) == 1 ? '' : 's' ) + ' this week.');
         }
       });
