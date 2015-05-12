@@ -4,6 +4,7 @@ var express = require('express'),
   User = mongoose.model('User'),
   Chip = mongoose.model('Chip'),
   Transaction = mongoose.model('Transaction'),
+  async = require('async'),
   request = require('request'),
   moment = require('moment'),
   config = require('../../config/config');  
@@ -20,11 +21,23 @@ router.get('/', function(req, res, next) {
 });
 
 router.get('/users', function(req, res, next) {
-  User.find({'deleted': false, 'active': true}).populate('transactions.user').exec(function(err, users) {
-    if(err) return next(err);
-    res.render('users', {
-      title: 'Chips Users',
-      users: users
+  User.find({
+    'deleted': false,
+    'active': true
+  })
+  .populate('transactions')
+  .exec(function(err, users) {
+    var iter = function(user, callback) {
+      Transaction.populate(user.transactions, {
+        'path': 'user'
+      }, callback);
+    }
+
+    async.each(users, iter, function done(err) {
+      res.render('users', {
+        title: 'Chips Users',
+        users: users
+      });
     });
   });
 });
@@ -52,7 +65,7 @@ router.post('/users/import', function(req, res, next) {
           email: member.profile.email,
           avatar: member.profile.image_192,
           deleted: member.deleted,
-          active: true
+          active: (member.name == 'vinidy' || member.name == 'bernard') ? true : false
         };
 
         User.findOneAndUpdate({'uid': user.uid}, user, {upsert: true}, function(err) {});
@@ -192,7 +205,7 @@ router.post('/chips/clear', function(req, res, next) {
   });
 });
 
-// TODO: Find a better way to stack this so that you can return an actual success
+// TODO: use async to make this function not pending
 // TODO: Make use of function for giving someone a chip instead of doing it here (don't populate transaction fields though)
 router.post('/chips/start', function(req, res, next) {
   clearChips(function() {
@@ -213,7 +226,7 @@ router.post('/chips/start', function(req, res, next) {
 
         user.chips = chips;
         user.save();
-      });
+      }); 
     });
   });
 
@@ -221,8 +234,6 @@ router.post('/chips/start', function(req, res, next) {
 });
 
 function sendChips(token, reqFromUserId, text, res) {
-  // TODO do input validation on text to scrub out any commas or anything that doesnt perfectly match your criteria (use regex)
-  // TODO allow people to comment on a chip
   if(token != config.slackOutgoingToken) {
     return res.status(200).json({result: 'Who is this?'});
   }
@@ -230,20 +241,13 @@ function sendChips(token, reqFromUserId, text, res) {
   var fromUserId = reqFromUserId;
   var body = text;
 
-  var pattern = /\B@[.a-z0-9_-]+/gi;
-  var mentions = body.match(pattern);
-  var lastIndex = 0;
-
-  while((match = pattern.exec(body)) != null) {
-    lastIndex = pattern.lastIndex;
-  }
-
-  var message = (body.slice(lastIndex)).trim();
-
-  return res.status(200);
+  var pattern = /^\B@[.a-z0-9_-]+/gi;
+  var mention = body.match(pattern)[0];
+  var message = (body.slice(mention.length)).trim();
   
   User.findOne({'uid': fromUserId}).populate('chips transactions').exec(function(err, fromUser) {
     if(err) {
+      // TODO move generic error messages into config
       return res.status(200).send('Hmmm, there seems to be something wrong with the server. Please try again later.');
     }
 
@@ -252,89 +256,81 @@ function sendChips(token, reqFromUserId, text, res) {
     }
 
     if(!fromUser.chips.length) {
-      return res.status(200).send("You don't have any chips.");
+      return res.status(200).send("You don't have any more chips to chip.");
     }
 
-    if(fromUser.chips.length < mentions.length) {
-      return res.status(200).send('You only have ' + fromUser.chips.length + ' chip' + (fromUser.chips.length == 1 ? '.' : 's.' ));
-    }
+    User.findOne({'name': mention.replace('@','')}).populate('chips transactions').exec(function(err, toUser) {
+      if(err) {
+        return res.status(200).send('Hmmm, there seems to be something wrong with the server. Please try again later.');
+      }        
 
-    mentions.forEach(function(mention, index) {
-      User.findOne({'name': mention.replace('@','')}).populate('chips transactions').exec(function(err, toUser) {
-        if(err) {
-          return res.status(200).send('Hmmm, there seems to be something wrong with the server. Please try again later.');
-        }        
+      if(toUser == null) {          
+        return res.status(200).send("We couldn't find " + mention + ".");
+      }
 
-        if(toUser == null) {          
-          // TODO fix use case where one @mention can't be found, heck, maybe just ignore it
-          return res.status(200).send("We couldn't find " + mention + ".");
-        }
+      if(fromUser.uid == toUser.uid) {
+        return res.status(200).send("Nice try, but you can't chip yourself.");
+      }
 
-        if(fromUser.uid == toUser.uid) {
-          return res.status(200).send("Nice try, but you can't chip yourself.");
-        }
+      if(!toUser.active) {
+        return res.status(200).send(mention + ' is not an active user.');
+      }
 
-        if(!toUser.active) {
-          return res.status(200).send('@' + toUser.name + ' is not an active user.');
-        }
+      var chip = fromUser.chips.pop();
 
-        var chip = fromUser.chips.pop();
+      chip.user._id = toUser._id;
+      chip.save();
 
-        chip.user._id = toUser._id;
-        chip.save();
+      toUser.chips.push(chip);
 
-        toUser.chips.push(chip);
-
-        var toTransaction = new Transaction({
-          'user': toUser._id,
-          'chip': chip._id,
-          'direction': config.directions.SENT,
-          'created': Date.now(),
-          'message': message
-        });
-
-        var fromTransaction = new Transaction({
-          'user': fromUser._id,
-          'chip': chip._id,
-          'direction': config.directions.RECEIVED,
-          'created': Date.now(),
-          'message': message
-        });
-
-        toUser.transactions.push(toTransaction);
-        fromUser.transactions.push(fromTransaction);
-        
-        toUser.save();
-        fromUser.save();
-
-        // TODO if the last person fails, it won't get here to post
-        if(index == mentions.length - 1) {
-          request({ 
-            method: 'POST', 
-            uri: 'https://hooks.slack.com/services/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', 
-            body: JSON.stringify({
-              'text':'*' + mentions.join(' ') + ' ha' + (mentions.length == 1 ? 's' : 've' ) + ' been chipped!*',
-              'parse':'full',
-              'mrkdwn': true,   
-              'attachments':[{
-                'text':message,
-                'color':'#c6a256'
-              }]         
-            })
-          });
-
-          // TODO see if filter includes latest transaction
-          var week = fromUser.transactions.filter(function(elem) {
-            return moment(elem.created).isAfter(moment().day('Monday').startOf('day'));
-          });
-
-          var sent = week.filter(function(elem) {
-            return (elem.direction == config.directions.SENT);
-          });
-
-          return res.status(200).send(mentions.join(', ') + ' ha' + (mentions.length == 1 ? 's' : 've' ) + ' been chipped! You have ' + fromUser.chips.length + ' chip' + (fromUser.chips.length == 1 ? '' : 's' ) + ' left. You have sent ' + sent.length + ' chip' + (sent.length == 1 ? '' : 's' ) + ' and received ' + (week.length - sent.length) + ' chip' + ((week.length - sent.length) == 1 ? '' : 's' ) + ' this week.');
-        }
+      var toTransaction = new Transaction({
+        'user': toUser._id,
+        'chip': chip._id,
+        'direction': config.directions.RECEIVED,
+        'created': Date.now(),
+        'message': message
       });
+
+      var fromTransaction = new Transaction({
+        'user': fromUser._id,
+        'chip': chip._id,
+        'direction': config.directions.SENT,
+        'created': Date.now(),
+        'message': message
+      });
+
+      toTransaction.save();
+      fromTransaction.save();
+
+      toUser.transactions.push(toTransaction);
+      fromUser.transactions.push(fromTransaction);
+      
+      toUser.save();
+      fromUser.save();
+
+      request({ 
+        method: 'POST', 
+        uri: 'https://hooks.slack.com/services/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', 
+        body: JSON.stringify({
+          'text':'*' + mention + ' has been chipped!*',
+          'parse':'full',
+          'mrkdwn': true,
+          'attachments':[{
+            'text':message,
+            'color':'#c6a256'
+          }]         
+        })
+      });
+
+      var week = fromUser.transactions.filter(function(elem) {
+        return moment(elem.created).isAfter(moment().day('Monday').startOf('day'));
+      });
+
+      var sent = week.filter(function(elem) {
+        return (elem.direction == config.directions.SENT);
+      });
+
+      return res.status(200).send(mention + 'has been chipped! You have ' + fromUser.chips.length + ' chip' + (fromUser.chips.length == 1 ? '' : 's' ) + ' left. You have sent ' + sent.length + ' chip' + (sent.length == 1 ? '' : 's' ) + ' and received ' + (week.length - sent.length) + ' chip' + ((week.length - sent.length) == 1 ? '' : 's' ) + ' this week.');
     });
   });
 }

@@ -21,6 +21,7 @@
         if(data.result == 'success') {
           location.reload(true);
         } else {
+          console.log(data)
           alert(data.result);
         }
       });
