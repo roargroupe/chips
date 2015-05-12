@@ -1,5 +1,6 @@
 (function(Chips, $) {}(window.Chips = window.Chips || {}, jQuery));
 
+// TODO clean this up with actual namespacing
 (function(Users, $) {
   Users.init = function() {
     $('#import-users').click(function() {
@@ -41,10 +42,10 @@
       return false;
     });
 
-    $('#chip-local').submit(function() {
+    $('#chip-command').submit(function() {
       var form = $(this).serializeObject();
 
-      $.post('/chip/local', form, function(data) {
+      $.post('/chip/command', form, function(data) {
         if(data.result == 'success') {
           alert(data);
         } else {
