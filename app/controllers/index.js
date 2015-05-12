@@ -219,6 +219,7 @@ router.post('/chips/start', function(req, res, next) {
 });
 
 function sendChips(token, reqFromUserId, text, res) {
+  // TODO do input validation on text to scrub out any commas or anything that doesnt perfectly match your criteria (use regex)
   // TODO allow people to comment on a chip
   if(token != config.slackOutgoingToken) {
     return res.status(200).json({result: 'Who is this?'});
