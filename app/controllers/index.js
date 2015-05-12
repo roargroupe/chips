@@ -3,10 +3,12 @@ var express = require('express'),
   mongoose = require('mongoose'),
   User = mongoose.model('User'),
   Chip = mongoose.model('Chip'),
+  Transaction = mongoose.model('Transaction'),
   request = require('request'),
   moment = require('moment'),
   config = require('../../config/config');  
 
+// TODO create separate controllers for the different things happening in the app
 module.exports = function(app) {  
   app.use('/', router);  
 };
@@ -219,7 +221,6 @@ router.post('/chips/start', function(req, res, next) {
 });
 
 function sendChips(token, reqFromUserId, text, res) {
-  // TODO allow people to comment on a chip
   if(token != config.slackOutgoingToken) {
     return res.status(200).json({result: 'Who is this?'});
   }
@@ -229,8 +230,17 @@ function sendChips(token, reqFromUserId, text, res) {
 
   var pattern = /\B@[.a-z0-9_-]+/gi;
   var mentions = body.match(pattern);
+  var lastIndex = 0;
+
+  while((match = pattern.exec(body)) != null) {
+    lastIndex = pattern.lastIndex;
+  }
+
+  var message = (body.slice(lastIndex)).trim();
+
+  return res.status(200);
   
-  User.findOne({'uid': fromUserId}).populate('chips').exec(function(err, fromUser) {
+  User.findOne({'uid': fromUserId}).populate('chips transactions').exec(function(err, fromUser) {
     if(err) {
       return res.status(200).send('Hmmm, there seems to be something wrong with the server. Please try again later.');
     }
@@ -240,11 +250,15 @@ function sendChips(token, reqFromUserId, text, res) {
     }
 
     if(!fromUser.chips.length) {
-      return res.status(200).send("You don't have enough chips to send.");
+      return res.status(200).send("You don't have any chips.");
+    }
+
+    if(fromUser.chips.length < mentions.length) {
+      return res.status(200).send('You only have ' + fromUser.chips.length + ' chip' + (fromUser.chips.length == 1 ? '.' : 's.' ));
     }
 
     mentions.forEach(function(mention, index) {
-      User.findOne({'name': mention.replace('@','')}).populate('chips').exec(function(err, toUser) {
+      User.findOne({'name': mention.replace('@','')}).populate('chips transactions').exec(function(err, toUser) {
         if(err) {
           return res.status(200).send('Hmmm, there seems to be something wrong with the server. Please try again later.');
         }        
@@ -255,7 +269,7 @@ function sendChips(token, reqFromUserId, text, res) {
         }
 
         if(fromUser.uid == toUser.uid) {
-          return res.status(200).send("Nice try, but you can't transfer a chip to yourself.");
+          return res.status(200).send("Nice try, but you can't chip yourself.");
         }
 
         if(!toUser.active) {
@@ -269,23 +283,29 @@ function sendChips(token, reqFromUserId, text, res) {
 
         toUser.chips.push(chip);
 
-        fromUser.transactions.push({
-          user: toUser._id,
-          direction: config.directions.SENT,
-          chip: chip._id,
-          created: Date.now()
+        var toTransaction = new Transaction({
+          'user': toUser._id,
+          'chip': chip._id,
+          'direction': config.directions.SENT,
+          'created': Date.now(),
+          'message': message
         });
 
-        toUser.transactions.push({
-          user: fromUser._id,
-          direction: config.directions.RECEIVED,
-          chip: chip._id,
-          created: Date.now()
+        var fromTransaction = new Transaction({
+          'user': fromUser._id,
+          'chip': chip._id,
+          'direction': config.directions.RECEIVED,
+          'created': Date.now(),
+          'message': message
         });
 
-        fromUser.save();
+        toUser.transactions.push(toTransaction);
+        fromUser.transactions.push(fromTransaction);
+        
         toUser.save();
+        fromUser.save();
 
+        // TODO if the last person fails, it won't get here to post
         if(index == mentions.length - 1) {
           request({ 
             method: 'POST', 
@@ -295,12 +315,13 @@ function sendChips(token, reqFromUserId, text, res) {
               'parse':'full',
               'mrkdwn': true,   
               'attachments':[{
-                'text':"He did a pretty good job in today's meeting. Thanks dude.",
+                'text':message,
                 'color':'#c6a256'
               }]         
             })
           });
 
+          // TODO see if filter includes latest transaction
           var week = fromUser.transactions.filter(function(elem) {
             return moment(elem.created).isAfter(moment().day('Monday').startOf('day'));
           });
@@ -320,6 +341,6 @@ router.post('/chip', function(req, res, next) {
   sendChips(req.body.token, req.body.user_id, req.body.text, res);
 });
 
-router.post('/chip/local/', function(req, res, next) {
+router.post('/chip/command/', function(req, res, next) {
   sendChips(config.slackOutgoingToken, config.testUserId, req.body.text, res);
 });
