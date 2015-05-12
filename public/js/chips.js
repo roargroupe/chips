@@ -41,7 +41,7 @@
       return false;
     });
 
-    /*$('#chip-local').submit(function() {
+    $('#chip-local').submit(function() {
       var form = $(this).serializeObject();
 
       $.post('/chip/local', form, function(data) {
@@ -53,7 +53,7 @@
       });
 
       return false;
-    });*/
+    });
 
     $('#clear-chips').click(function() {
       $.post($(this).attr('href'), function(data) {

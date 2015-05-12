@@ -219,7 +219,7 @@ router.post('/chips/start', function(req, res, next) {
 });
 
 function sendChips(token, reqFromUserId, text, res) {
-  // TODO kill everything after the @mention for now
+  // TODO allow people to comment on a chip
   if(token != config.slackOutgoingToken) {
     return res.status(200).json({result: 'Who is this?'});
   }
@@ -243,8 +243,6 @@ function sendChips(token, reqFromUserId, text, res) {
       return res.status(200).send("You don't have enough chips to send.");
     }
 
-    var formattedMentions = [];
-
     mentions.forEach(function(mention, index) {
       User.findOne({'name': mention.replace('@','')}).populate('chips').exec(function(err, toUser) {
         if(err) {
@@ -252,6 +250,7 @@ function sendChips(token, reqFromUserId, text, res) {
         }        
 
         if(toUser == null) {          
+          // TODO fix use case where one @mention can't be found, heck, maybe just ignore it
           return res.status(200).send("We couldn't find " + mention + ".");
         }
 
@@ -287,24 +286,19 @@ function sendChips(token, reqFromUserId, text, res) {
         fromUser.save();
         toUser.save();
 
-        formattedMentions.push('<@' + toUser.uid + '|' + toUser.name + '>');
-
         if(index == mentions.length - 1) {
-          request.post('https://hooks.slack.com/services/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').form({
-            'attachments':[
-              {
-                'fallback':mentions.join(', ') + ' ha' + (mentions.length == 1 ? 's' : 've' ) + ' been chipped!',
-                /*'pretext':'New open task [Urgent]: <http://url_to_task|Test out Slack message attachments>',*/
-                'color':'#c6a256',
-                'fields':[
-                  {
-                    'title':formattedMentions.join(', ') + ' ha' + (formattedMentions.length == 1 ? 's' : 've' ) + ' been chipped!',
-                    'value':'Way to go buddy!',
-                    'short':false
-                  }
-                ]
-              }
-            ]
+          request({ 
+            method: 'POST', 
+            uri: 'https://hooks.slack.com/services/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', 
+            body: JSON.stringify({
+              'text':'*' + mentions.join(' ') + ' ha' + (mentions.length == 1 ? 's' : 've' ) + ' been chipped!*',
+              'parse':'full',
+              'mrkdwn': true,   
+              'attachments':[{
+                'text':"He did a pretty good job in today's meeting. Thanks dude.",
+                'color':'#c6a256'
+              }]         
+            })
           });
 
           var week = fromUser.transactions.filter(function(elem) {
