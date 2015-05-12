@@ -65,7 +65,7 @@ router.post('/users/import', function(req, res, next) {
           email: member.profile.email,
           avatar: member.profile.image_192,
           deleted: member.deleted,
-          active: (member.name == 'vinidy' || member.name == 'bernard') ? true : false
+          active: (member.name == 'vinidy' || member.name == 'bernard' || member.name == 'johnathan.stewart' || member.name == 'robzand') ? true : false
         };
 
         User.findOneAndUpdate({'uid': user.uid}, user, {upsert: true}, function(err) {});
