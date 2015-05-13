@@ -1,96 +1,61 @@
 (function(Chips, $) {}(window.Chips = window.Chips || {}, jQuery));
 
-// TODO clean this up with actual namespacing
-(function(Users, $) {
-  Users.init = function() {
-    $('#import-users').click(function() {
-      $.post("/users/import", function(data) {
-        if(data.result == 'success') {
-          alert(data.result);
-        } else {
-          alert(data.result);
-        }
-        
-      });
+(function(Admin, $) {
+  Admin.init = function() {};
 
-      return false;
-    });
-
-    $('.give-chip').click(function() {
+  Admin.clickImportUsers = function(elements) {
+    $(elements).click(function() {
       $.post($(this).attr('href'), function(data) {
-        if(data.result == 'success') {
-          location.reload(true);
-        } else {
-          console.log(data)
-          alert(data.result);
-        }
-      });
-
-      return false;
-    });
-
-    $('#transfer-chips').submit(function() {
-      var form = $(this).serializeObject();
-
-      $.post('/chips/transfer/' + form.from + '/' + form.to + '/' + form.amount, function(data) {
-        if(data.result == 'success') {
-          alert(data.result);
-        } else {
-          alert(data.result);
-        }
-      });
-
-      return false;
-    });
-
-    $('#chip-command').submit(function() {
-      var form = $(this).serializeObject();
-
-      $.post('/chip/command', form, function(data) {
-        if(data.result == 'success') {
-          alert(data);
-        } else {
-          alert(data);
-        }
-      });
-
-      return false;
-    });
-
-    $('#clear-chips').click(function() {
-      $.post($(this).attr('href'), function(data) {
-        if(data.result == 'success') {
-          alert(data.result);
-        } else {
-          alert(data.result);
-        }
-      });
-
-      return false;
-    });
-
-    $('#start-week').click(function() {
-      $.post($(this).attr('href'), function(data) {
-        if(data.result == 'success') {
-          alert(data.result);
-        } else {
-          alert(data.result);
-        }
-      });
-
-      return false;
-    });
-
-    $('.activate, .deactivate').click(function() {
-      $.post($(this).attr('href'), function(data) {
-        if(data.result == 'success') {
-          location.reload(true);
-        } else {
-          alert(data.result);
-        }
+        console.log(data);
       });
 
       return false;
     });
   };
+
+  Admin.clickGiveChip = function(elements) {
+    $(elements).click(function() {
+      $.post($(this).attr('href'), function(data) {
+        console.log(data);        
+      });
+
+      return false;
+    });
+  };
+
+  Admin.clickToggleActivation = function(elements) {
+    $(elements).click(function() {
+      $.post($(this).attr('href'), function(data) {
+        console.log(data);
+      });
+
+      return false;
+    });
+  };
+
+  Admin.clickChipsClear = function(elements) {
+    $(elements).click(function() {
+      $.post($(this).attr('href'), function(data) {
+        console.log(data);
+      });
+
+      return false;
+    });
+  };
+
+  Admin.submitChipCommand = function(elements) {
+    $(elements).submit(function() {
+      var form = $(this).serializeObject();
+
+      $.post($(this).data('post-url'), form, function(data) {
+        console.log(data);
+      });
+
+      return false;
+    });
+  };
+}(window.Chips.Admin = window.Chips.Admin || {}, jQuery));
+
+(function(Users, $) {
+  Users.init = function() {};
 }(window.Chips.Users = window.Chips.Users || {}, jQuery));

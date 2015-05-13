@@ -1,5 +1,9 @@
 $(document).ready(function() {
-  Chips.Users.init();
+  Chips.Admin.clickImportUsers('#import-users');
+  Chips.Admin.clickGiveChip('.give-chip');
+  Chips.Admin.clickToggleActivation('.activate, .deactivate');
+  Chips.Admin.clickChipsClear('#clear-chips');
+  Chips.Admin.submitChipCommand('#chip-command');
 });
 
 $.fn.serializeObject = function()

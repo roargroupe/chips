@@ -1,0 +1,14 @@
+extends /layout
+
+block content
+  h1= title
+
+  h2 Run Chip Command
+    form#chip-command(data-post-url='/admin/chip/command')
+      label(for='text') /chip 
+      textarea(id='text', name='text') @bernard you really know how to chip :)
+      input(type='submit')
+
+  h2 Tools
+    p
+      a#clear-chips(href='/admin/chips/clear') Clear Chips
