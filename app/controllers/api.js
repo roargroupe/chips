@@ -16,7 +16,7 @@ router.post('/chip', function(req, res, next) {
 
   if(req.body.text.search('@') == 0) {
     chips.send(config, req.body.user_id, req.body.text, res);
-  } else if(req.body.text.search('leaderboard') > 0) {
+  } else if(req.body.text.search('leaderboard') == 0) {
     // slack /chip leaderboard
     chips.leaderboard(config, function(leaderboard) {
       var received = '';

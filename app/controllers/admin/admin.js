@@ -139,5 +139,35 @@ router.post('/chips/clear', function(req, res, next) {
 });
 
 router.post('/chip/command', function(req, res, next) {
-  chips.send(config, config.testUserId, req.body.text, res);
+  // TODO find a way to consolidate this command with api.js
+  if(req.body.text.search('@') == 0) {
+   chips.send(config, config.testUserId, req.body.text, res);
+  } else if(req.body.text.search('leaderboard') == 0) {
+    chips.leaderboard(config, function(leaderboard) {
+      var received = '';
+      var sent = '';
+
+      for(var i = 0; i < leaderboard.received.length; i++) {
+        received += leaderboard.received[i].user.name + ': ' + leaderboard.received[i].count;
+
+        if(i < leaderboard.received.length - 1) {
+          received += ', ';
+        } else {
+          received += '.';
+        }
+      }
+
+      for(var i = 0; i < leaderboard.sent.length; i++) {
+        sent += leaderboard.sent[i].user.name + ': ' + leaderboard.sent[i].count;
+
+        if(i < leaderboard.sent.length - 1) {
+          sent += ', ';
+        } else {
+          sent += '.';
+        }
+      }
+
+      res.status(200).send('Weekly Leaderboard! Most chips received: ' + received + ' Most chips sent: ' + sent);
+    }, res);
+  }
 });
