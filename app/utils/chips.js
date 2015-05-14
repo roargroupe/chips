@@ -12,6 +12,7 @@
     moment = require('moment');
 
   chips.clear = function(callback) {
+    // TODO when clearing chips, don't clear them otherwise the transactions are dead, instead make them inactive
     Chip.remove({}, function(err, chips) {
       User.update({}, {$set: {chips: []}}, {multi: true}, function(err, users) {
         callback();
@@ -128,6 +129,7 @@
 
   chips.leaderboard = function(config, callback, res) {
     // TODO find cheeky workaround for aggregate->populate in mongo/mongoose
+    // TODO limit to top 5
     Transaction.aggregate([        
       {$match: {created: {$gt: new Date(moment().day('Monday').startOf('day').toDate())}}},
       {$group: {_id: '$to', count: {$sum: 1}}},

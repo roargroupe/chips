@@ -44,5 +44,7 @@ router.post('/chip', function(req, res, next) {
 
       res.status(200).send('Weekly Leaderboard! Most chips received: ' + received + ' Most chips sent: ' + sent);
     }, res);
+  } else {
+    res.status(200).send('Chipster says no.');
   }
 });
