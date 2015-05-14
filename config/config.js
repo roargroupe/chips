@@ -12,11 +12,7 @@ var config = {
     db: 'mongodb://localhost/chips-development',
     slackToken: 'xoxp-2358143428-3992166299-4757109184-f103d9',
     slackOutgoingToken: 'XqaWepkEfNQnVqZdJSHT39NY',
-    directions: {
-      SENT: 0,
-      RECEIVED: 1
-    },
-    testUserId: 'U03V64W8T'
+    testUserId: 'U02AJ47CN'//'U03V64W8T'//
   },
 
   test: {
@@ -28,10 +24,6 @@ var config = {
     db: 'mongodb://localhost/chips-test',
     slackToken: 'xoxp-2358143428-3992166299-4757109184-f103d9',
     slackOutgoingToken: 'XqaWepkEfNQnVqZdJSHT39NY',
-    directions: {
-      SENT: 0,
-      RECEIVED: 1
-    },
     testUserId: 'U03V64W8T'
   },
 
@@ -44,10 +36,6 @@ var config = {
     db: process.env.MONGOLAB_URI,
     slackToken: 'xoxp-2358143428-3992166299-4757109184-f103d9',
     slackOutgoingToken: 'XqaWepkEfNQnVqZdJSHT39NY',
-    directions: {
-      SENT: 0,
-      RECEIVED: 1
-    },
     testUserId: 'U03V64W8T'
   }
 };

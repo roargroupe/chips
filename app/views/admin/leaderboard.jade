@@ -1,0 +1,24 @@
+extends /layout
+
+block content
+  h1= title
+
+  h2 Most Chips Received This Week
+  table
+    tr
+      th Username
+      th Chips
+    each row in leaderboard.received
+      tr
+        td= row.user.name
+        td= row.count
+
+  h2 Most Chips Sent This Week
+  table
+    tr
+      th Username
+      th Chips
+    each row in leaderboard.sent
+      tr
+        td= row.user.name
+        td= row.count

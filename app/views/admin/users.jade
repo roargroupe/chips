@@ -12,7 +12,10 @@ mixin row(user)
     td
       if user.transactions
         each transaction in user.transactions
-          p #{transaction.direction ? 'to' : 'from'} #{transaction.user.name}
+          if user.name == transaction.to.name
+            p from #{transaction.from.name}
+          else
+            p to #{transaction.to.name}
     td
       if user.active
         a.deactivate(href='/admin/user/deactivate/' + user.uid) Deactivate

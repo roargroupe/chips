@@ -2,15 +2,18 @@ var mongoose = require('mongoose'),
   Schema = mongoose.Schema;
 
 var TransactionSchema = new Schema({  
-    user: {
+    from: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
-    },    
+    },
+    to: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }, 
     chip: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Chip'
-    },
-    direction: Number,
+    },    
     created: Date,
     message: String
 });

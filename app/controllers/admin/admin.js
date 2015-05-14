@@ -28,7 +28,7 @@ router.get('/users', function(req, res, next) {
   .exec(function(err, users) {
     async.each(users, function(user, callback) {
       Transaction.populate(user.transactions, {
-        'path': 'user'
+        'path': 'to from'
       }, callback);
     }, function done(err) {
       res.render('admin/users', {
@@ -37,6 +37,15 @@ router.get('/users', function(req, res, next) {
       });
     });
   });
+});
+
+router.get('/users/leaderboard', function(req, res, next) {
+  chips.leaderboard(config, function(leaderboard) {
+    res.render('admin/leaderboard', {
+      title: 'Leaderboard',
+      leaderboard: leaderboard
+    });
+  }, res);
 });
 
 router.post('/users/import', function(req, res, next) {
@@ -130,5 +139,5 @@ router.post('/chips/clear', function(req, res, next) {
 });
 
 router.post('/chip/command', function(req, res, next) {
-  chips.send(config, config.slackOutgoingToken, config.testUserId, req.body.text, res);
+  chips.send(config, config.testUserId, req.body.text, res);
 });
