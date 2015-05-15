@@ -24,9 +24,15 @@ router.get('/', function(req, res, next) {
 
 router.get('/users', function(req, res, next) {
   User.find({})
-  .populate('transactions')
+  .populate('chips transactions')
   .exec(function(err, users) {
     async.each(users, function(user, callback) {
+      user.activeChips = user.nonActiveChips = [];
+      if(user.active && user.chips) {
+        user.activeChips = user.chips.filter(function(chip) { return (chip.active) ? chip : null; });
+        user.nonActiveChips = user.chips.filter(function(chip) { return !chip.active ? chip : null; });
+      }
+
       Transaction.populate(user.transactions, {
         'path': 'to from'
       }, callback);
@@ -83,7 +89,10 @@ router.post('/user/chip/:uid', function(req, res, next) {
       return res.status(200).json({result: 'This user is not active.'});
     }
 
-    var chip = new Chip({'user': user._id});
+    var chip = new Chip({
+      'user': user._id,
+      'active': true
+    });
 
     chip.save(function(err) {
       if(err) {
@@ -133,41 +142,11 @@ router.get('/chips', function(req, res, next) {
 });
 
 router.post('/chips/clear', function(req, res, next) {
-  chips.clear(function() {
-    return res.json({result: 'success'});
+  chips.clear(function(result) {
+    return res.json(result);
   });
 });
 
 router.post('/chip/command', function(req, res, next) {
-  // TODO find a way to consolidate this command with api.js
-  if(req.body.text.search('@') == 0) {
-   chips.send(config, config.testUserId, req.body.text, res);
-  } else if(req.body.text.search('leaderboard') == 0) {
-    chips.leaderboard(config, function(leaderboard) {
-      var received = '';
-      var sent = '';
-
-      for(var i = 0; i < leaderboard.received.length; i++) {
-        received += leaderboard.received[i].user.name + ': ' + leaderboard.received[i].count;
-
-        if(i < leaderboard.received.length - 1) {
-          received += ', ';
-        } else {
-          received += '.';
-        }
-      }
-
-      for(var i = 0; i < leaderboard.sent.length; i++) {
-        sent += leaderboard.sent[i].user.name + ': ' + leaderboard.sent[i].count;
-
-        if(i < leaderboard.sent.length - 1) {
-          sent += ', ';
-        } else {
-          sent += '.';
-        }
-      }
-
-      res.status(200).send('Weekly Leaderboard! Most chips received: ' + received + ' Most chips sent: ' + sent);
-    }, res);
-  }
+  chips.route(config, config.testUserId, req, res, next);
 });

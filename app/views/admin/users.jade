@@ -7,8 +7,11 @@ mixin row(user)
     td= user.name
     td= user.real_name
     td
-      p= user.chips.length
-        a.give-chip(href='/admin/user/chip/' + user.uid) Give Chip
+      p= user.activeChips.length        
+    td
+      p= user.nonActiveChips.length + user.activeChips.length
+    td
+      a.give-chip(href='/admin/user/chip/' + user.uid) Give Chip
     td
       if user.transactions
         each transaction in user.transactions
@@ -30,7 +33,9 @@ block content
       th Avatars
       th Username
       th Name
-      th Chips
+      th Active Chips
+      th Total Chips
+      th Chip
       th Transactions
       th Status
     each user in users
