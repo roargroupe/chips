@@ -1,4 +1,4 @@
-var require('newrelic'),
+var newrelic = require('newrelic'),
   express = require('express'),
   config = require('./config/config'),
   glob = require('glob'),
